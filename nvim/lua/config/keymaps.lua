@@ -37,6 +37,40 @@ local function check_git()
   return true
 end
 
+-- <leader>g にはこのファイルで定義したショートカットのみを候補として表示したいので、
+-- LazyVim / gitsigns がデフォルトで <leader>g 配下に登録するキーマップを先に削除する。
+local default_git_keymaps = {
+  { "n", "<leader>gg" },
+  { "n", "<leader>gG" },
+  { "n", "<leader>gL" },
+  { "n", "<leader>gb" },
+  { "n", "<leader>gf" },
+  { "n", "<leader>gl" },
+  { "n", "<leader>gB" },
+  { "x", "<leader>gB" },
+  { "n", "<leader>gY" },
+  { "x", "<leader>gY" },
+  { "n", "<leader>gd" },
+  { "n", "<leader>gD" },
+  { "n", "<leader>gi" },
+  { "n", "<leader>gI" },
+  { "n", "<leader>ghs" },
+  { "x", "<leader>ghs" },
+  { "n", "<leader>ghr" },
+  { "x", "<leader>ghr" },
+  { "n", "<leader>ghS" },
+  { "n", "<leader>ghu" },
+  { "n", "<leader>ghR" },
+  { "n", "<leader>ghp" },
+  { "n", "<leader>ghb" },
+  { "n", "<leader>ghB" },
+  { "n", "<leader>ghd" },
+  { "n", "<leader>ghD" },
+}
+for _, k in ipairs(default_git_keymaps) do
+  pcall(vim.keymap.del, k[1], k[2])
+end
+
 -- Space + g + A : 全てステージ
 vim.keymap.set("n", "<leader>gA", function()
   if check_git() then vim.cmd("!git add .") end
@@ -79,6 +113,50 @@ end, { desc = "Git Rebase Autosquash..." })
 vim.keymap.set("n", "<leader>gt", function()
   if check_git() then vim.cmd("!git --no-pager log --graph --all --oneline --decorate") end
 end, { desc = "Git Tree" })
+
+-- Space + g + c : 直前のコミットにメッセージ変更なしで追加（amend）
+vim.keymap.set("n", "<leader>gc", function()
+  if check_git() then vim.cmd("!git commit --amend --no-edit") end
+end, { desc = "Git Commit Amend (No Edit)" })
+
+-- Space + g + b : ブランチ一覧を表示
+vim.keymap.set("n", "<leader>gb", function()
+  if check_git() then vim.cmd("!git --no-pager branch -vv") end
+end, { desc = "Git Branch List" })
+
+-- Space + g + s : 既存ブランチへ switch（一覧から選択）
+vim.keymap.set("n", "<leader>gs", function()
+  if not check_git() then return end
+  local branches = vim.fn.systemlist("git branch --format='%(refname:short)'")
+  if vim.v.shell_error ~= 0 or #branches == 0 then
+    vim.notify("ブランチが見つかりませんでした", vim.log.levels.ERROR)
+    return
+  end
+  vim.ui.select(branches, { prompt = "Switch to branch:" }, function(choice)
+    if choice then
+      vim.cmd("!git switch " .. vim.fn.shellescape(choice))
+    end
+  end)
+end, { desc = "Git Switch Branch" })
+
+-- Space + g + S : 新規ブランチを作成して switch
+vim.keymap.set("n", "<leader>gS", function()
+  if not check_git() then return end
+  local name = vim.fn.input("New branch name: ")
+  if name ~= "" then
+    vim.cmd("!git switch -c " .. vim.fn.shellescape(name))
+  end
+end, { desc = "Git Switch -c (New Branch)" })
+
+-- Space + g + z : スタッシュ
+vim.keymap.set("n", "<leader>gz", function()
+  if check_git() then vim.cmd("!git stash") end
+end, { desc = "Git Stash" })
+
+-- Space + g + Z : スタッシュポップ
+vim.keymap.set("n", "<leader>gZ", function()
+  if check_git() then vim.cmd("!git stash pop") end
+end, { desc = "Git Stash Pop" })
 
 -- Space + g + g : Lazygit（現在のcwdで開く）
 -- LazyVim標準の<leader>ggはcwdを無視してgit rootに固定されるため上書き。
