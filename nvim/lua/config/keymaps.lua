@@ -37,6 +37,20 @@ local function check_git()
   return true
 end
 
+-- git コマンドを実行し、結果を必ず通知するヘルパー。
+-- :! だとコマンドラインの表示に流れて気づきにくいことがあるため、
+-- 実行結果(成功/失敗 + 出力)を毎回 notify で明示する。
+local function run_git(cmd, title)
+  if not check_git() then
+    return false
+  end
+  local result = vim.trim(vim.fn.system(cmd))
+  local ok = vim.v.shell_error == 0
+  local msg = result ~= "" and result or (ok and "OK" or "失敗しました")
+  vim.notify(msg, ok and vim.log.levels.INFO or vim.log.levels.ERROR, { title = title })
+  return ok, result
+end
+
 -- <leader>g にはこのファイルで定義したショートカットのみを候補として表示したいので、
 -- LazyVim / gitsigns がデフォルトで <leader>g 配下に登録するキーマップを先に削除する。
 local default_git_keymaps = {
@@ -73,7 +87,7 @@ end
 
 -- Space + g + A : 全てステージ
 vim.keymap.set("n", "<leader>gA", function()
-  if check_git() then vim.cmd("!git add .") end
+  run_git("git add .", "Git Add All")
 end, { desc = "Git Add All" })
 
 -- Space + g + C : メッセージ付きコミット
@@ -81,30 +95,29 @@ vim.keymap.set("n", "<leader>gC", function()
   if not check_git() then return end
   local msg = vim.fn.input("Commit message: ")
   if msg ~= "" then
-    vim.cmd("!git commit -m '" .. msg .. "'")
-    vim.notify("Committed: " .. msg)
+    run_git("git commit -m " .. vim.fn.shellescape(msg), "Git Commit")
   end
 end, { desc = "Git Commit" })
 
 -- Space + g + p : 通常プッシュ
 -- -u は初回以降も無害（毎回 upstream を(再)設定するだけ）なので、常時これでOK
 vim.keymap.set("n", "<leader>gp", function()
-  if check_git() then vim.cmd("!git push -u origin HEAD") end
+  run_git("git push -u origin HEAD", "Git Push")
 end, { desc = "Git Push" })
 
 -- Space + g + P : 安全な強制プッシュ
 vim.keymap.set("n", "<leader>gP", function()
-  if check_git() then vim.cmd("!git push origin HEAD --force-with-lease --force-if-includes") end
+  run_git("git push origin HEAD --force-with-lease --force-if-includes", "Git Push Force Safe")
 end, { desc = "Git Push Force Safe" })
 
 -- Space + g + F : フェッチ（リモートで消えたブランチの追跡も掃除）
 vim.keymap.set("n", "<leader>gF", function()
-  if check_git() then vim.cmd("!git fetch -p") end
+  run_git("git fetch -p", "Git Fetch (Prune)")
 end, { desc = "Git Fetch (Prune)" })
 
 -- Space + g + l : プル
 vim.keymap.set("n", "<leader>gl", function()
-  if check_git() then vim.cmd("!git pull") end
+  run_git("git pull", "Git Pull")
 end, { desc = "Git Pull" })
 
 -- Space + g + f : fixupコミット（ハッシュ入力待ち）
@@ -137,7 +150,7 @@ end, { desc = "Git Tree" })
 
 -- Space + g + c : 直前のコミットにメッセージ変更なしで追加（amend）
 vim.keymap.set("n", "<leader>gc", function()
-  if check_git() then vim.cmd("!git commit --amend --no-edit") end
+  run_git("git commit --amend --no-edit", "Git Commit Amend (No Edit)")
 end, { desc = "Git Commit Amend (No Edit)" })
 
 -- Space + g + b : ブランチ一覧を表示（フローティングターミナル、qで閉じる）
@@ -161,7 +174,7 @@ vim.keymap.set("n", "<leader>gs", function()
   end
   vim.ui.select(branches, { prompt = "Switch to branch:" }, function(choice)
     if choice then
-      vim.cmd("!git switch " .. vim.fn.shellescape(choice))
+      run_git("git switch " .. vim.fn.shellescape(choice), "Git Switch Branch")
     end
   end)
 end, { desc = "Git Switch Branch" })
@@ -171,18 +184,18 @@ vim.keymap.set("n", "<leader>gS", function()
   if not check_git() then return end
   local name = vim.fn.input("New branch name: ")
   if name ~= "" then
-    vim.cmd("!git switch -c " .. vim.fn.shellescape(name))
+    run_git("git switch -c " .. vim.fn.shellescape(name), "Git Switch -c (New Branch)")
   end
 end, { desc = "Git Switch -c (New Branch)" })
 
 -- Space + g + z : スタッシュ
 vim.keymap.set("n", "<leader>gz", function()
-  if check_git() then vim.cmd("!git stash") end
+  run_git("git stash", "Git Stash")
 end, { desc = "Git Stash" })
 
 -- Space + g + Z : スタッシュポップ
 vim.keymap.set("n", "<leader>gZ", function()
-  if check_git() then vim.cmd("!git stash pop") end
+  run_git("git stash pop", "Git Stash Pop")
 end, { desc = "Git Stash Pop" })
 
 -- Space + g + g : Lazygit（現在のcwdで開く）
