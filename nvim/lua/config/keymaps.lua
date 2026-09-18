@@ -97,6 +97,16 @@ vim.keymap.set("n", "<leader>gP", function()
   if check_git() then vim.cmd("!git push origin HEAD --force-with-lease --force-if-includes") end
 end, { desc = "Git Push Force Safe" })
 
+-- Space + g + F : フェッチ（リモートで消えたブランチの追跡も掃除）
+vim.keymap.set("n", "<leader>gF", function()
+  if check_git() then vim.cmd("!git fetch -p") end
+end, { desc = "Git Fetch (Prune)" })
+
+-- Space + g + l : プル
+vim.keymap.set("n", "<leader>gl", function()
+  if check_git() then vim.cmd("!git pull") end
+end, { desc = "Git Pull" })
+
 -- Space + g + f : fixupコミット（ハッシュ入力待ち）
 vim.keymap.set("n", "<leader>gf", function()
   if not check_git() then return end
