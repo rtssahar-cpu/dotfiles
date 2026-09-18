@@ -86,10 +86,11 @@ vim.keymap.set("n", "<leader>gC", function()
   end
 end, { desc = "Git Commit" })
 
--- Space + g + p : 通常プッシュ（初回作成にも対応）
+-- Space + g + p : 通常プッシュ
+-- -u は初回以降も無害（毎回 upstream を(再)設定するだけ）なので、常時これでOK
 vim.keymap.set("n", "<leader>gp", function()
   if check_git() then vim.cmd("!git push -u origin HEAD") end
-end, { desc = "Git Push (初回対応)" })
+end, { desc = "Git Push" })
 
 -- Space + g + P : 安全な強制プッシュ
 vim.keymap.set("n", "<leader>gP", function()
@@ -109,9 +110,19 @@ vim.keymap.set("n", "<leader>gr", function()
   vim.fn.feedkeys(":!git rebase -i --autosquash ")
 end, { desc = "Git Rebase Autosquash..." })
 
--- Space + g + t : Gitツリー（ページャーを無効化して表示）
+-- Space + g + t : Gitツリー
+-- :! だと noice.nvim のメッセージ/コマンドラインUIと干渉して複数行出力が
+-- 表示されないことがあるため、lazygitと同じフローティングターミナルで表示する。
+-- auto_close はデフォルトtrueで、一瞬で終わるコマンドだと開いた直後に
+-- 自動で閉じてしまう（何も起きていないように見える）ので明示的にfalseにする。
+-- (q で閉じられる)
 vim.keymap.set("n", "<leader>gt", function()
-  if check_git() then vim.cmd("!git --no-pager log --graph --all --oneline --decorate") end
+  if check_git() then
+    Snacks.terminal(
+      { "git", "--no-pager", "log", "--graph", "--all", "--oneline", "--decorate" },
+      { cwd = vim.fn.getcwd(), interactive = false, auto_close = false }
+    )
+  end
 end, { desc = "Git Tree" })
 
 -- Space + g + c : 直前のコミットにメッセージ変更なしで追加（amend）
@@ -119,9 +130,15 @@ vim.keymap.set("n", "<leader>gc", function()
   if check_git() then vim.cmd("!git commit --amend --no-edit") end
 end, { desc = "Git Commit Amend (No Edit)" })
 
--- Space + g + b : ブランチ一覧を表示
+-- Space + g + b : ブランチ一覧を表示（フローティングターミナル、qで閉じる）
+-- auto_close=false: 一瞬で終わるコマンドで自動的に閉じてしまわないようにする
 vim.keymap.set("n", "<leader>gb", function()
-  if check_git() then vim.cmd("!git --no-pager branch -vv") end
+  if check_git() then
+    Snacks.terminal(
+      { "git", "--no-pager", "branch", "-vv" },
+      { cwd = vim.fn.getcwd(), interactive = false, auto_close = false }
+    )
+  end
 end, { desc = "Git Branch List" })
 
 -- Space + g + s : 既存ブランチへ switch（一覧から選択）
