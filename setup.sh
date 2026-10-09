@@ -169,15 +169,19 @@ echo "⚙️ LazyVim の設定を配置中..."
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NVIM_CONFIG_DIR="$HOME/.config/nvim"
 
-if [ -d "$NVIM_CONFIG_DIR" ] && [ ! -L "$NVIM_CONFIG_DIR/init.lua" ]; then
+# コピーではなくシンボリックリンクにすることで、git pull しただけで nvim に反映されるようにする
+if [ -L "$NVIM_CONFIG_DIR" ]; then
+    # 既存のシンボリックリンクは張り直す（リンク先の実体は消えない）
+    rm "$NVIM_CONFIG_DIR"
+elif [ -e "$NVIM_CONFIG_DIR" ]; then
     BACKUP_DIR="${NVIM_CONFIG_DIR}.bak.$(date +%Y%m%d%H%M%S)"
     echo "📂 既存の設定を ${BACKUP_DIR} にバックアップします。"
     mv "$NVIM_CONFIG_DIR" "$BACKUP_DIR"
 fi
 
-mkdir -p "$NVIM_CONFIG_DIR"
-cp -R "$SCRIPT_DIR/nvim/." "$NVIM_CONFIG_DIR/"
-echo "✅ LazyVim の設定の配置が完了しました。"
+mkdir -p "$(dirname "$NVIM_CONFIG_DIR")"
+ln -s "$SCRIPT_DIR/nvim" "$NVIM_CONFIG_DIR"
+echo "✅ LazyVim の設定を ${NVIM_CONFIG_DIR} -> ${SCRIPT_DIR}/nvim にリンクしました。"
 
 # 11. プラグインの事前インストール
 echo "🔌 LazyVim のプラグインをインストール中..."
