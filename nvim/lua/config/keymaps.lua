@@ -31,7 +31,7 @@ end, { desc = "ファイルの絶対パスをコピー" })
 local function check_git()
   vim.fn.system("git rev-parse --is-inside-work-tree 2>/dev/null")
   if vim.v.shell_error ~= 0 then
-    vim.notify("ここはGit管理下のディレクトリではありません", vim.log.levels.ERROR)
+    vim.notify("ここはGit管理下のディレクトリではありません", vim.log.levels.ERROR, { timeout = 0 })
     return false
   end
   return true
@@ -47,7 +47,8 @@ local function run_git(cmd, title)
   local result = vim.trim(vim.fn.system(cmd))
   local ok = vim.v.shell_error == 0
   local msg = result ~= "" and result or (ok and "OK" or "失敗しました")
-  vim.notify(msg, ok and vim.log.levels.INFO or vim.log.levels.ERROR, { title = title })
+  -- 失敗時は timeout = 0 で自動で消さず、手動で閉じるまで表示し続ける
+  vim.notify(msg, ok and vim.log.levels.INFO or vim.log.levels.ERROR, { title = title, timeout = not ok and 0 or nil })
   return ok, result
 end
 
@@ -169,7 +170,7 @@ vim.keymap.set("n", "<leader>gs", function()
   if not check_git() then return end
   local branches = vim.fn.systemlist("git branch --format='%(refname:short)'")
   if vim.v.shell_error ~= 0 or #branches == 0 then
-    vim.notify("ブランチが見つかりませんでした", vim.log.levels.ERROR)
+    vim.notify("ブランチが見つかりませんでした", vim.log.levels.ERROR, { timeout = 0 })
     return
   end
   vim.ui.select(branches, { prompt = "Switch to branch:" }, function(choice)
