@@ -145,6 +145,27 @@ if command -v fdfind &> /dev/null && ! command -v fd &> /dev/null; then
 fi
 echo "✅ 依存パッケージのインストールが完了しました。"
 
+# 7.5 draw.io プレビュー用（nvim/lua/plugins/drawio.lua）
+# draw.io デスクトップ版の CLI で PNG に変換し、snacks.image で表示する。
+# ヘッドレス環境なので xvfb-run 経由で実行する。imagemagick は snacks.image の画像変換用。
+echo "🖼️ draw.io プレビュー用の依存パッケージをインストール中..."
+sudo apt-get install -y xvfb imagemagick
+if ! command -v drawio &> /dev/null; then
+    DRAWIO_ARCH=$(dpkg --print-architecture)
+    DRAWIO_URL=$(curl -fsSL https://api.github.com/repos/jgraph/drawio-desktop/releases/latest \
+        | grep -o "https://[^\"]*drawio-${DRAWIO_ARCH}-[^\"]*\.deb" | head -n1)
+    if [ -n "$DRAWIO_URL" ]; then
+        curl -fLo /tmp/drawio.deb "$DRAWIO_URL"
+        sudo apt-get install -y /tmp/drawio.deb
+        rm -f /tmp/drawio.deb
+        echo "✅ draw.io のインストールが完了しました。"
+    else
+        echo "❌ draw.io のダウンロード URL を取得できませんでした（${DRAWIO_ARCH}）。"
+    fi
+else
+    echo "⏩ draw.io はすでにインストールされているためスキップします。"
+fi
+
 # 8. Node.js のインストール（LSP・フォーマッタ・リンタ用）
 if ! command -v node &> /dev/null; then
     echo "📦 Node.js をインストール中..."
