@@ -206,7 +206,8 @@ echo "✅ LazyVim の設定を ${NVIM_CONFIG_DIR} -> ${SCRIPT_DIR}/nvim にリ�
 
 # 11. プラグインの事前インストール
 echo "🔌 LazyVim のプラグインをインストール中..."
-nvim --headless "+Lazy! sync" +qa
+# sync だと最新に更新され lazy-lock.json が書き換わるため、lock どおりの版で入れる restore を使う
+nvim --headless "+Lazy! restore" +qa
 echo "✅ LazyVim のプラグインのインストールが完了しました。"
 
 
